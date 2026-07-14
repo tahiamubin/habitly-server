@@ -11,7 +11,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -25,7 +25,6 @@
     "@vercel/node": "^5.8.24",
     "ts-node": "^10.9.2",
     "tsx": "^4.23.0",
-    "typescript": "^7.0.2",
-    "type": "module"
+    "typescript": "^7.0.2"
   }
 }
