@@ -1,4 +1,4 @@
-import "dotenv/config"; // must be the very first import — loads .env before anything else
+import "dotenv/config";
 
 import express, { NextFunction, Request, Response } from "express";
 import {
@@ -9,7 +9,15 @@ import {
   ObjectId,
 } from "mongodb";
 import cors from "cors";
-import { createRemoteJWKSet, jwtVerify } from "jose-cjs";
+import type { JWTPayload } from "jose-cjs";
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: JWTPayload;
+    }
+  }
+}
 
 const uri = process.env.MONGODB_URI as string;
 const port = process.env.PORT;
@@ -25,9 +33,6 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
-const JWKS = createRemoteJWKSet(
-  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
-);
 
 interface Habit {
   category: string;
@@ -35,6 +40,18 @@ interface Habit {
   name: string;
   target: string;
   createdAt: Date;
+}
+
+let JWKS: ReturnType<typeof import("jose-cjs").createRemoteJWKSet>;
+let jwtVerify: typeof import("jose-cjs").jwtVerify;
+
+
+async function initAuth() {
+  const jose = await import("jose-cjs");
+  jwtVerify = jose.jwtVerify;
+  JWKS = jose.createRemoteJWKSet(
+    new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
+  );
 }
 
 export const verifyToken = async (
@@ -66,7 +83,7 @@ export const verifyToken = async (
 
 async function run() {
   try {
-    //await client.connect();
+    await initAuth();
 
     const database: Db = client.db("habitly");
     const habitCollections: Collection<Habit> =
@@ -96,11 +113,12 @@ async function run() {
         res.status(500).json({ error: (error as Error).message });
       }
     });
+
     app.delete("/habit/:id", async (req: Request, res: Response) => {
       try {
         const { id } = req.params;
         const result = await habitCollections.deleteOne({
-          _id: new ObjectId(id),
+          _id: new ObjectId(id as string),
         });
         res.status(200).json(result);
       } catch (error) {
