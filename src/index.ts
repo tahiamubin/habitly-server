@@ -66,7 +66,7 @@ export const verifyToken = async (
 
 async function run() {
   try {
-    await client.connect();
+    //await client.connect();
 
     const database: Db = client.db("habitly");
     const habitCollections: Collection<Habit> =
